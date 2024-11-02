@@ -40,8 +40,10 @@ static int            socket_create(int domain, int type, int protocol);
 static void           socket_bind(int sockfd, struct sockaddr_storage *addr, in_port_t port);
 static void           start_listening(int server_fd, int backlog);
 static int            socket_accept_connection(int server_fd, struct sockaddr_storage *client_addr, socklen_t *client_addr_len);
-static void           handle_connection(int client_sockfd, struct sockaddr_storage *client_addr);
+static void           receive_data(int client_sockfd, struct sockaddr_storage *client_addr, char *input_string, char *filter);
 static void           shutdown_socket(int sockfd, int how);
 static void           socket_close(int sockfd);
+static void           process_string(char *input_string, const char *filter);
+static void           send_data(int sockfd, const char *input_string);
 
 #endif //SERVER_H

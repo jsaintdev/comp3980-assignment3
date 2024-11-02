@@ -6,27 +6,37 @@ include "server.h"
 
 int main(int argc, char *argv[])
 {
+    char                   *input_string;
+    char                   *filter;
     char                   *address;
     char                   *port_str;
     in_port_t               port;
     int                     sockfd;
     struct sockaddr_storage addr;
 
+    input_string = NULL;
+    filter = NULL;
     address  = NULL;
     port_str = NULL;
+
+    // Set up the server
     parse_arguments(argc, argv, &address, &port_str);
     handle_arguments(argv[0], address, port_str, &port);
     convert_address(address, &addr);
     sockfd = socket_create(addr.ss_family, SOCK_STREAM, 0);
     socket_bind(sockfd, &addr, port);
     start_listening(sockfd, SOMAXCONN);
+
+    // Set up Signal Handler
     setup_signal_handler();
 
+    // Server Loop
     while(!(exit_flag))
     {
         int                     client_sockfd;
         struct sockaddr_storage client_addr;
         socklen_t               client_addr_len;
+        pid_t                   pid;
 
         client_addr_len = sizeof(client_addr);
         client_sockfd   = socket_accept_connection(sockfd, &client_addr, &client_addr_len);
@@ -37,15 +47,42 @@ int main(int argc, char *argv[])
             {
                 break;
             }
-
             continue;
         }
 
-        handle_connection(client_sockfd, &client_addr);
-        shutdown_socket(client_sockfd, SHUT_RD);
-        socket_close(client_sockfd);
+        // Fork a new child process for each new connection
+        pid = fork();
+        if(pid == -1)
+        {
+            perror("Error creating child process");
+            close(client_sockfd);
+            continue;
+        }
+
+        if(pid == 0)
+        {
+            // Child Process
+            close(sockfd);
+
+            // Receive, process, and send data back
+            receive_data(client_sockfd, &client_addr, input_string, filter);
+            process_string(input_string, filter);
+            send_data(client_sockfd, input_string, filter);
+
+            // Shut down child process
+            shutdown_socket(client_sockfd, SHUT_RDWR);
+            socket_close(client_sockfd);
+            exit(EXIT_SUCCESS);
+        }
+        else
+        {
+            // Parent Process
+            close(client_sockfd);
+            waitpid(-1, NULL, WNOHANG);
+        }
     }
 
+    // Graceful Termination
     shutdown_socket(sockfd, SHUT_RDWR);
     socket_close(sockfd);
 
@@ -321,8 +358,43 @@ static int socket_accept_connection(int server_fd, struct sockaddr_storage *clie
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
 // cppcheck-suppress constParameterPointer
-static void handle_connection(int client_sockfd, struct sockaddr_storage *client_addr)
+static void receive_data(int client_sockfd, struct sockaddr_storage *client_addr, char *input_string, char *filter)
 {
+    ssize_t read_bytes;
+    uint8_t filter_len;
+    uint8_t string_len;
+
+    // Receive the filter
+    read_bytes = read(client_sockfd, &filter_len, sizeof(filter_len));
+    if(read_bytes <= 0)
+    {
+        perror("Error reading filter length from socket");
+        exit(EXIT_FAILURE);
+    }
+
+    read_bytes = read(client_sockfd, filter, filter_len);
+    if(read_bytes <= 0)
+    {
+        perror("Error reading filter from socket");
+        exit(EXIT_FAILURE);
+    }
+    filter[filter_len] = '\0';
+
+    // Receive the string
+    read_bytes = read(client_sockfd, &string_len, sizeof(string_len));
+    if(read_bytes <= 0)
+    {
+        perror("Error reading string length from socket");
+        exit(EXIT_FAILURE);
+    }
+
+    read_bytes = read(client_sockfd, input_string, string_len);
+    if(read_bytes <= 0)
+    {
+        perror("Error reading input string from socket");
+        exit(EXIT_FAILURE);
+    }
+    input_string[string_len] = '\0';
 }
 
 #pragma GCC diagnostic pop
@@ -341,6 +413,50 @@ static void socket_close(int sockfd)
     if(close(sockfd) == -1)
     {
         perror("Error closing socket");
+        exit(EXIT_FAILURE);
+    }
+}
+
+// Apply the chosen filter on the string
+static void process_string(char *input_string, const char *filter)
+{
+    if(strcmp(filter, "upper") == 0)
+    {
+        for(int i = 0; input_string[i]; i++)
+        {
+            input_string[i] = (char)toupper((unsigned char)input_string[i]);
+        }
+    }
+    else if(strcmp(filter, "lower") == 0)
+    {
+        for(int i = 0; input_string[i]; i++)
+        {
+            input_string[i] = (char)tolower((unsigned char)input_string[i]);
+        }
+    }
+    else if(strcmp(filter, "null") == 0)
+    {
+        printf("Filter is null. No transformation applied.\n");
+    }
+}
+
+// Send data to server
+static void send_data(int sockfd, const char *input_string)
+{
+    ssize_t write_bytes;
+    uint8_t string_len = (uint8_t)strlen(input_string);
+
+    write_bytes = write(sockfd, &string_len, sizeof(uint8_t));
+    if(write_bytes < 0)
+    {
+        perror("Error writing string length to socket");
+        exit(EXIT_FAILURE);
+    }
+
+    write_bytes = write(sockfd, input_string, string_len);
+    if(write_bytes < 0)
+    {
+        perror("Error writing string to socket");
         exit(EXIT_FAILURE);
     }
 }
