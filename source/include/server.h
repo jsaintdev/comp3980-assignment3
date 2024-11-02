@@ -8,22 +8,24 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define BUFFER_SIZE 1024
+#define UNKNOWN_OPTION_MESSAGE_LEN 24
 #define BASE_TEN 10
 #define EXIT_CODE 1
 
@@ -46,4 +48,4 @@ static void           socket_close(int sockfd);
 static void           process_string(char *input_string, const char *filter);
 static void           send_data(int sockfd, const char *input_string);
 
-#endif //SERVER_H
+#endif    // SERVER_H

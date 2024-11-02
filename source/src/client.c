@@ -2,7 +2,7 @@
 // Created by justinsaint on 01/11/24.
 //
 
-include "client.h"
+#include "client.h"
 
 int main(int argc, char *argv[])
 {
@@ -16,9 +16,9 @@ int main(int argc, char *argv[])
     struct sockaddr_storage addr;
 
     input_string = NULL;
-    filter = NULL;
-    address  = NULL;
-    port_str = NULL;
+    filter       = NULL;
+    address      = NULL;
+    port_str     = NULL;
 
     // Parse and handle user input
     parse_arguments(argc, argv, &input_string, &filter, &address, &port_str);
@@ -116,7 +116,7 @@ static void handle_arguments(const char *binary_name, const char *input_string, 
 
     if(strlen(input_string) >= BUFFER_SIZE)
     {
-        usage(binary_name, EXIT_FAILURE, "Input string exceeds maximum length of %d characters", BUFFER_SIZE - ONE);
+        usage(binary_name, EXIT_FAILURE, "Input string exceeds maximum allowed length.");
     }
 
     if(filter == NULL || (strcmp(filter, "upper") != 0 && strcmp(filter, "lower") != 0 && strcmp(filter, "null") != 0))
@@ -319,7 +319,7 @@ static void processed_data(int sockfd, char *buffer)
 
     if(length == 0)
     {
-        break;
+        return;
     }
 
     // Read the processed string

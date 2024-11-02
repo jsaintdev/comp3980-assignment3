@@ -2,7 +2,7 @@
 // Created by justinsaint on 01/11/24.
 //
 
-include "server.h"
+#include "server.h"
 
 int main(int argc, char *argv[])
 {
@@ -15,9 +15,9 @@ int main(int argc, char *argv[])
     struct sockaddr_storage addr;
 
     input_string = NULL;
-    filter = NULL;
-    address  = NULL;
-    port_str = NULL;
+    filter       = NULL;
+    address      = NULL;
+    port_str     = NULL;
 
     // Set up the server
     parse_arguments(argc, argv, &address, &port_str);
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
             // Receive, process, and send data back
             receive_data(client_sockfd, &client_addr, input_string, filter);
             process_string(input_string, filter);
-            send_data(client_sockfd, input_string, filter);
+            send_data(client_sockfd, input_string);
 
             // Shut down child process
             shutdown_socket(client_sockfd, SHUT_RDWR);
@@ -378,7 +378,11 @@ static void receive_data(int client_sockfd, struct sockaddr_storage *client_addr
         perror("Error reading filter from socket");
         exit(EXIT_FAILURE);
     }
-    filter[filter_len] = '\0';
+
+    if(filter != NULL)
+    {
+        filter[filter_len] = '\0';
+    }
 
     // Receive the string
     read_bytes = read(client_sockfd, &string_len, sizeof(string_len));
@@ -394,7 +398,11 @@ static void receive_data(int client_sockfd, struct sockaddr_storage *client_addr
         perror("Error reading input string from socket");
         exit(EXIT_FAILURE);
     }
-    input_string[string_len] = '\0';
+
+    if(input_string != NULL)
+    {
+        input_string[string_len] = '\0';
+    }
 }
 
 #pragma GCC diagnostic pop
@@ -420,43 +428,49 @@ static void socket_close(int sockfd)
 // Apply the chosen filter on the string
 static void process_string(char *input_string, const char *filter)
 {
-    if(strcmp(filter, "upper") == 0)
+    if(filter != NULL)
     {
-        for(int i = 0; input_string[i]; i++)
+        if(strcmp(filter, "upper") == 0)
         {
-            input_string[i] = (char)toupper((unsigned char)input_string[i]);
+            for(int i = 0; input_string[i]; i++)
+            {
+                input_string[i] = (char)toupper((unsigned char)input_string[i]);
+            }
         }
-    }
-    else if(strcmp(filter, "lower") == 0)
-    {
-        for(int i = 0; input_string[i]; i++)
+        else if(strcmp(filter, "lower") == 0)
         {
-            input_string[i] = (char)tolower((unsigned char)input_string[i]);
+            for(int i = 0; input_string[i]; i++)
+            {
+                input_string[i] = (char)tolower((unsigned char)input_string[i]);
+            }
         }
-    }
-    else if(strcmp(filter, "null") == 0)
-    {
-        printf("Filter is null. No transformation applied.\n");
+        else if(strcmp(filter, "null") == 0)
+        {
+            printf("Filter is null. No transformation applied.\n");
+        }
     }
 }
 
 // Send data to server
 static void send_data(int sockfd, const char *input_string)
 {
-    ssize_t write_bytes;
-    uint8_t string_len = (uint8_t)strlen(input_string);
-
-    write_bytes = write(sockfd, &string_len, sizeof(uint8_t));
-    if(write_bytes < 0)
+    if(input_string != NULL)
     {
-        perror("Error writing string length to socket");
-        exit(EXIT_FAILURE);
-    }
+        ssize_t write_bytes;
+        uint8_t string_len = (uint8_t)strlen(input_string);
 
-    write_bytes = write(sockfd, input_string, string_len);
-    if(write_bytes < 0)
-    {
-        perror("Error writing string to socket");
-        exit(EXIT_FAILURE);
+        write_bytes = write(sockfd, &string_len, sizeof(uint8_t));
+        if(write_bytes < 0)
+        {
+            perror("Error writing string length to socket");
+            exit(EXIT_FAILURE);
+        }
+
+        write_bytes = write(sockfd, input_string, string_len);
+        if(write_bytes < 0)
+        {
+            perror("Error writing string to socket");
+            exit(EXIT_FAILURE);
+        }
     }
 }
