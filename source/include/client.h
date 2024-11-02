@@ -5,8 +5,11 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <inttypes.h>
+#include <netinet/in.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,14 +19,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#define FIFO_IN "./fifo_in"
-#define FIFO_OUT "./fifo_out"
-#define BUFFER_SIZE 1024
-#define FILTER_SIZE 64
-#define ARGS_NUM 7
+#define UNKNOWN_OPTION_MESSAGE_LEN 24
+#define BASE_ONE 1
+#define BASE_TWO 2
+#define BASE_TEN 10
 
-static void parse_arguments(int argc, char *argv[], char **input_string, char filter[FILTER_SIZE]);
-static int  handle_arguments(const char *input_string, const char *filter);
 _Noreturn static void usage(const char *program_name, int exit_code, const char *message);
+static void parse_arguments(int argc, char *argv[], char **input_string, char **filter, char **address, char **port);
+static void handle_arguments(const char *binary_name, const char *input_string, const char *filter, const char *address, const char *port_str, in_port_t *port);
+in_port_t parse_in_port_t(const char *binary_name, const char *str);
+static void           convert_address(const char *address, struct sockaddr_storage *addr);
+
 
 #endif //CLIENT_H
