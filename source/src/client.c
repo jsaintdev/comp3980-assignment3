@@ -266,9 +266,10 @@ static void socket_close(int sockfd)
 static void send_data(int sockfd, const char *input_string, const char *filter)
 {
     ssize_t write_bytes;
+    uint8_t filter_len = (uint8_t)strlen(filter);
+    uint8_t string_len = (uint8_t)strlen(input_string);
 
     // Send the filter
-    uint8_t filter_len = (uint8_t)strlen(filter);
     write_bytes = write(sockfd, &filter_len, sizeof(uint8_t));
     if(write_bytes < 0)
     {
@@ -284,7 +285,6 @@ static void send_data(int sockfd, const char *input_string, const char *filter)
     }
 
     // Send the string
-    uint8_t string_len = (uint8_t)strlen(input_string);
     write_bytes = write(sockfd, &string_len, sizeof(uint8_t));
     if(write_bytes < 0)
     {
