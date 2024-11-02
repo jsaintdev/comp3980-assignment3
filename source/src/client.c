@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
     // Send data to server
     send_data(sockfd, input_string, filter);
-    processed_date(sockfd, buffer);
+    processed_data(sockfd, buffer);
 
     socket_close(sockfd);
     return EXIT_SUCCESS;
@@ -265,15 +265,39 @@ static void socket_close(int sockfd)
 // Send data to server
 static void send_data(int sockfd, const char *input_string, const char *filter)
 {
+    ssize_t write_bytes;
+
     // Send the filter
     uint8_t filter_len = (uint8_t)strlen(filter);
-    write(sockfd, &filter_len, sizeof(uint8_t));
-    write(sockfd, filter, filter_len);
+    write_bytes = write(sockfd, &filter_len, sizeof(uint8_t));
+    if(write_bytes < 0)
+    {
+        perror("Error writing filter length to socket");
+        exit(EXIT_FAILURE);
+    }
+
+    write_bytes = write(sockfd, filter, filter_len);
+    if(write_bytes < 0)
+    {
+        perror("Error writing filter to socket");
+        exit(EXIT_FAILURE);
+    }
 
     // Send the string
     uint8_t string_len = (uint8_t)strlen(input_string);
-    write(sockfd, &string_len, sizeof(uint8_t));
-    write(sockfd, input_string, string_len);
+    write_bytes = write(sockfd, &string_len, sizeof(uint8_t));
+    if(write_bytes < 0)
+    {
+        perror("Error writing string length to socket");
+        exit(EXIT_FAILURE);
+    }
+
+    write_bytes = write(sockfd, input_string, string_len);
+    if(write_bytes < 0)
+    {
+        perror("Error writing string to socket");
+        exit(EXIT_FAILURE);
+    }
 }
 
 // Receives processed string and prints it to console
@@ -282,9 +306,11 @@ static void processed_data(int sockfd, char *buffer)
     uint8_t length;
     ssize_t read_bytes;
 
+    // Clear buffer
+    memset(buffer, 0, BUFFER_SIZE);
+
     // Read the length of the processed string
     read_bytes = read(sockfd, &length, sizeof(length));
-
     if(read_bytes < 0)
     {
         perror("Error reading processed string length from socket");
@@ -298,7 +324,6 @@ static void processed_data(int sockfd, char *buffer)
 
     // Read the processed string
     read_bytes = read(sockfd, buffer, length);
-
     if(read_bytes < 0)
     {
         perror("Error reading processed string from socket");
