@@ -6,22 +6,21 @@
 
 int main(int argc, char *argv[])
 {
-    char                   *input_string;
-    char                   *filter;
-    char                   *address;
-    char                   *port_str;
-    char                    buffer[BUFFER_SIZE];
+    char *address;
+    char *port_str;
+    char  input_string[BUFFER_SIZE];
+    char  filter[FILTER_SIZE];
+    char  buffer[BUFFER_SIZE];
+
     in_port_t               port;
     int                     sockfd;
     struct sockaddr_storage addr;
 
-    input_string = NULL;
-    filter       = NULL;
-    address      = NULL;
-    port_str     = NULL;
+    address  = NULL;
+    port_str = NULL;
 
     // Parse and handle user input
-    parse_arguments(argc, argv, &input_string, &filter, &address, &port_str);
+    parse_arguments(argc, argv, input_string, filter, &address, &port_str);
     handle_arguments(argv[0], input_string, filter, address, port_str, &port);
 
     // Set up network socket
@@ -54,7 +53,7 @@ _Noreturn static void usage(const char *program_name, int exit_code, const char 
 }
 
 // Parses user input and checks if the correct number of arguments were passed
-static void parse_arguments(int argc, char *argv[], char **input_string, char **filter, char **address, char **port)
+static void parse_arguments(int argc, char *argv[], char *input_string, char *filter, char **address, char **port)
 {
     int opt;
 
@@ -66,12 +65,14 @@ static void parse_arguments(int argc, char *argv[], char **input_string, char **
         {
             case 's':
             {
-                *input_string = optarg;
+                strncpy(input_string, optarg, BUFFER_SIZE - 1);
+                input_string[BUFFER_SIZE - 1] = '\0';
                 break;
             }
             case 'f':
             {
-                *filter = optarg;
+                strncpy(filter, optarg, FILTER_SIZE - 1);
+                filter[FILTER_SIZE - 1] = '\0';
                 break;
             }
             case 'h':
@@ -331,5 +332,5 @@ static void processed_data(int sockfd, char *buffer)
     }
 
     buffer[length] = '\0';
-    printf("Processed string from server: \n%s\n", buffer);
+    printf("\nProcessed string from server: \n%s\n\n", buffer);
 }

@@ -25,6 +25,7 @@
 #include <unistd.h>
 
 #define BUFFER_SIZE 1024
+#define FILTER_SIZE 6
 #define UNKNOWN_OPTION_MESSAGE_LEN 24
 #define BASE_TEN 10
 #define EXIT_CODE 1

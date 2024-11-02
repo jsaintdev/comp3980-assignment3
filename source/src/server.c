@@ -6,18 +6,17 @@
 
 int main(int argc, char *argv[])
 {
-    char                   *input_string;
-    char                   *filter;
-    char                   *address;
-    char                   *port_str;
+    char *address;
+    char *port_str;
+    char  input_string[BUFFER_SIZE];
+    char  filter[FILTER_SIZE];
+
     in_port_t               port;
     int                     sockfd;
     struct sockaddr_storage addr;
 
-    input_string = NULL;
-    filter       = NULL;
-    address      = NULL;
-    port_str     = NULL;
+    address  = NULL;
+    port_str = NULL;
 
     // Set up the server
     parse_arguments(argc, argv, &address, &port_str);
